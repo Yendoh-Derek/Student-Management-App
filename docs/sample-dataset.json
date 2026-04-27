@@ -1,0 +1,19 @@
+{
+  "users": [
+    {
+      "name": "System Admin",
+      "email": "admin@sms.local",
+      "role": "ADMIN"
+    },
+    {
+      "name": "Jane Student",
+      "email": "student@sms.local",
+      "role": "STUDENT"
+    }
+  ],
+  "studentMetrics": {
+    "averageScore": 67,
+    "attendanceRate": 0.74,
+    "grades": [72, 61, 68]
+  }
+}
