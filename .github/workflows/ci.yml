@@ -43,7 +43,7 @@ jobs:
         working-directory: backend
 
       - name: Build frontend
-        run: npm run build
+        run: npx --yes next@16.2.4 build
         working-directory: frontend
 
       - name: Build backend
