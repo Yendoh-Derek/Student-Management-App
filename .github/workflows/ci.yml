@@ -9,6 +9,9 @@ on:
 jobs:
   web-and-api:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: development
+      NPM_CONFIG_PRODUCTION: "false"
 
     steps:
       - name: Checkout
