@@ -36,19 +36,24 @@ jobs:
         working-directory: backend
 
       - name: Lint frontend
-        run: npm run lint -w frontend
+        run: npm run lint
+        working-directory: frontend
 
       - name: Lint backend
-        run: npm run lint -w backend
+        run: npm run lint
+        working-directory: backend
 
       - name: Build frontend
-        run: npm run build -w frontend
+        run: npm run build
+        working-directory: frontend
 
       - name: Build backend
-        run: npm run build -w backend
+        run: npm run build
+        working-directory: backend
 
       - name: Test backend
-        run: npm run test -w backend
+        run: npm run test
+        working-directory: backend
 
   ai-service:
     runs-on: ubuntu-latest
