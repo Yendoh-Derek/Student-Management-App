@@ -27,11 +27,7 @@ jobs:
         run: npm ci
 
       - name: Install frontend dependencies
-        run: npm ci --include=dev
-        working-directory: frontend
-
-      - name: Ensure frontend lint toolchain installed
-        run: npm install -D eslint@^9 eslint-config-next@16.2.4
+        run: npm install
         working-directory: frontend
 
       - name: Install backend dependencies
