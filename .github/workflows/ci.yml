@@ -24,11 +24,11 @@ jobs:
         run: npm ci
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --include=dev
         working-directory: frontend
 
       - name: Install backend dependencies
-        run: npm ci
+        run: npm ci --include=dev
         working-directory: backend
 
       - name: Generate Prisma client
