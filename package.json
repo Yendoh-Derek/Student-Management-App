@@ -1,0 +1,28 @@
+{
+  "name": "student-management-app",
+  "version": "1.0.0",
+  "description": "Modern full-stack student management MVP with AI-powered analytics.",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "npm run start:dev -w backend",
+    "build": "npm run build -w frontend && npm run build -w backend",
+    "test": "npm run test -w backend",
+    "lint": "npm run lint -w frontend && npm run lint -w backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yendoh-Derek/Student-Management-App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Yendoh-Derek/Student-Management-App/issues"
+  },
+  "homepage": "https://github.com/Yendoh-Derek/Student-Management-App#readme"
+}
