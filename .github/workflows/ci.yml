@@ -35,7 +35,7 @@ jobs:
         working-directory: backend
 
       - name: Build frontend
-        run: npm run build -w frontend
+        run: NEXT_DISABLE_TURBOPACK=1 npm run build -w frontend
 
       - name: Build backend
         run: npm run build -w backend
