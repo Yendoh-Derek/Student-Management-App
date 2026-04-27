@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+body {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #35424a;
+        margin: 0;
+        padding: 0;
+        /* box-sizing: border-box; */
+        font-family: 'Poppins', sans-serif;
+}
+
+#students {
+    background-color: #ddd;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    left: 450px;
+    }
+.studentInputs{
+    display: flex;
+    flex-direction: column;
+}
+
+.student {
+    margin-bottom: 20px;
+}
+
+.studentName{
+    font-family: Arial, Helvetica, sans-serif ;
+    text-align: center;
+    
+}
+.addStudent{
+    align-items: center;
+    position: relative;
+    left: 120px;
+}
+label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+input {
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.subject {
+    display: flex;
+    justify-content: space-between;
+}
+
+button {
+    background-color: #4caf50;
+    color: #ddd;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    margin-right: 10px;
+    border-radius: 5px;
+    
+}
+
+button:hover {
+    background-color: #fff;
+    color: #4caf50;
+}
+
+.average {
+    font-weight: bold;
+    color: #333;
+}

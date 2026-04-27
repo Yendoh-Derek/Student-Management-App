@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="students">
+      <div class="studentName">
+        <div class="studentInputs">
+          <label for="studentName">Student Name:</label>
+          <input type="text" id="studentName" required />
+          <div class="subjects">
+            <div class="subject">
+              <input
+                type="text"
+                class="subjectName"
+                placeholder="Subject"
+                required
+              />
+              <input
+                type="number"
+                class="subjectScore"
+                placeholder="Score"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        <button onclick="addSubject(this)">Add Subject</button>
+        <button onclick="calculateAverage(this)">Calculate Average</button>
+        <p>Average Score: <span class="average"></span></p>
+      </div>
+      <button onclick="addStudent()" class="addStudent">
+        Add Another Student
+      </button>
+    </div>
+  </body>
+  <script src="script.js"></script>
+</html>

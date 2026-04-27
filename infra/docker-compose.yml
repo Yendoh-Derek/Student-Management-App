@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: sms_mvp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ../backend
+    env_file:
+      - ../backend/.env
+    depends_on:
+      - postgres
+      - ai-service
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ../frontend
+    env_file:
+      - ../frontend/.env
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+  ai-service:
+    build:
+      context: ../ai-service
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
