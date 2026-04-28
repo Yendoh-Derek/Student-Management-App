@@ -8,9 +8,9 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "lint": "tsc --noEmit",
-    "test": "node --test test/health.test.js",
+    "test": "node --test ./test/health.test.js ./test/grades-rollup.test.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:migrate": "prisma migrate dev",
     "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],

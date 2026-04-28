@@ -10,7 +10,9 @@ export class AnalyticsService {
 
   async getStudentAnalytics(studentId: number) {
     const student = await this.studentsService.findOne(studentId);
-    const grades = student.grades.map((grade) => grade.score);
+    const grades = student.enrollments.flatMap((e) =>
+      e.grades.map((grade) => grade.score)
+    );
 
     const payload = {
       grades,
