@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import axios from "axios";
+import type { JwtUser } from "../../common/types/jwt-user";
 import { StudentsService } from "../students/students.service";
 
 type RiskResponse = { risk_level: string; confidence: number };
@@ -8,8 +9,11 @@ type RiskResponse = { risk_level: string; confidence: number };
 export class AnalyticsService {
   constructor(private readonly studentsService: StudentsService) {}
 
-  async getStudentAnalytics(studentId: number) {
-    const student = await this.studentsService.findOne(studentId);
+  async getStudentAnalytics(studentId: number, user: JwtUser) {
+    const student = await this.studentsService.findOne(studentId, user);
+    if (user.role === "STUDENT" && student.userId !== user.userId) {
+      throw new ForbiddenException("You can only access your own analytics");
+    }
     const grades = student.enrollments.flatMap((e) =>
       e.grades.map((grade) => grade.score)
     );
