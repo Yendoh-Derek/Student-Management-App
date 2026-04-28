@@ -20,7 +20,15 @@ export class StudentsService {
 
   findAll() {
     return this.prisma.student.findMany({
-      include: { user: true, grades: true },
+      include: {
+        user: true,
+        enrollments: {
+          include: {
+            course: { select: { id: true, name: true } },
+            grades: true
+          }
+        }
+      },
       orderBy: { id: "asc" }
     });
   }
@@ -28,7 +36,15 @@ export class StudentsService {
   async findOne(id: number) {
     const student = await this.prisma.student.findUnique({
       where: { id },
-      include: { user: true, grades: true }
+      include: {
+        user: true,
+        enrollments: {
+          include: {
+            course: { select: { id: true, name: true } },
+            grades: true
+          }
+        }
+      }
     });
     if (!student) throw new NotFoundException("Student not found");
     return student;

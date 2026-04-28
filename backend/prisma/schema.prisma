@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -14,34 +15,56 @@ enum Role {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
-  student   Student?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String   @unique
+  password         String
+  role             Role     @default(STUDENT)
+  student          Student?
+  coursesTeaching  Course[] @relation("TeacherCourses")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model Student {
-  id             Int          @id @default(autoincrement())
-  userId         Int          @unique
+  id             Int           @id @default(autoincrement())
+  userId         Int           @unique
   classLevel     String
-  averageScore   Float        @default(0)
-  attendanceRate Float        @default(1)
-  riskLevel      String       @default("LOW")
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  grades         StudentGrade[]
+  averageScore   Float         @default(0)
+  attendanceRate Float         @default(1)
+  riskLevel      String        @default("LOW")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments    Enrollment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
-model StudentGrade {
+model Course {
+  id          Int           @id @default(autoincrement())
+  name        String
+  teacherId   Int
+  teacher     User          @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollments Enrollment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Enrollment {
   id        Int      @id @default(autoincrement())
   studentId Int
-  score     Float
-  term      String
+  courseId  Int
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  grades    Grade[]
+
+  @@unique([studentId, courseId])
+}
+
+model Grade {
+  id           Int          @id @default(autoincrement())
+  enrollmentId Int
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  score        Float
+  term         String
+  createdAt    DateTime     @default(now())
 }

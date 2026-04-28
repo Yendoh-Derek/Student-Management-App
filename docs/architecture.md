@@ -2,13 +2,16 @@
 
 ## Why Modular Monolith
 - Fast to build and reason about for solo development.
-- Clear module boundaries (`auth`, `students`, `analytics`) keep the backend maintainable.
+- Clear module boundaries (`auth`, `students`, `courses`, `enrollments`, `grades`, `analytics`) keep the backend maintainable.
 - Can be split into services later with minimal rewrite.
 
 ## Backend Modules
 - `auth`: registration, login, JWT issuance.
-- `students`: student profile CRUD and grade relationships.
-- `analytics`: combines student data with AI predictions.
+- `students`: student profiles; linked to enrollments and rollups (`averageScore` aggregates course-linked grades).
+- `courses`: course catalog with assigned teacher (`User` with role `TEACHER`).
+- `enrollments`: student–course enrollment (unique pair); grades attach to enrollments.
+- `grades`: scores per enrollment; updates student average on write.
+- `analytics`: combines student metrics with AI predictions (grade scores flattened from enrollments).
 - `prisma`: shared DB access.
 
 ## Data Flow

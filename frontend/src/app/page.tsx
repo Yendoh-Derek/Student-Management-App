@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 type AuthResponse = {
@@ -104,7 +105,12 @@ export default function Home() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl p-6 font-sans">
       <h1 className="mb-2 text-3xl font-bold">Student Management MVP</h1>
-      <p className="mb-6 text-slate-600">Auth + Students + AI Analytics vertical slice.</p>
+      <p className="mb-2 text-slate-600">Auth + Students + AI Analytics vertical slice.</p>
+      <p className="mb-6">
+        <Link href="/courses" className="text-blue-700 underline-offset-2 hover:underline">
+          Courses, enrollments & grades →
+        </Link>
+      </p>
 
       <section className="mb-6 rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-xl font-semibold">Login</h2>

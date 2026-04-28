@@ -1,0 +1,64 @@
+/* Scoped “academic noir” surface — avoids generic purple-on-white dashboards (see frontend/CLAUDE.md). */
+.courses-skin {
+  --surface: #0f1419;
+  --elevated: #171e27;
+  --accent: #e8a849;
+  --accent-dim: #c9923d;
+  --muted: #8b96a8;
+  --stroke: rgba(232, 168, 73, 0.18);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+
+  font-family: var(--font-academic-body), system-ui, sans-serif;
+  color: #e8ecf2;
+  background-color: var(--surface);
+  background-image: var(--grain), radial-gradient(
+    ellipse 80% 50% at 50% -20%,
+    rgba(232, 168, 73, 0.12),
+    transparent 55%
+  );
+}
+
+.courses-skin h1,
+.courses-skin h2 {
+  font-family: var(--font-academic-display), Georgia, serif;
+}
+
+.courses-skin .elevated {
+  background: var(--elevated);
+  border: 1px solid var(--stroke);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes courses-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.courses-skin .stagger-item {
+  opacity: 0;
+  animation: courses-stagger-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.courses-skin .stagger-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.courses-skin .stagger-item:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.courses-skin .stagger-item:nth-child(3) {
+  animation-delay: 0.19s;
+}
+.courses-skin .stagger-item:nth-child(4) {
+  animation-delay: 0.26s;
+}
+.courses-skin .stagger-item:nth-child(5) {
+  animation-delay: 0.33s;
+}

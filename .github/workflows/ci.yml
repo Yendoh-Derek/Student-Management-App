@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NPM_CONFIG_PRODUCTION: "false"
+      # Placeholder URLs so Prisma CLI can read schema (DATABASE_URL + DIRECT_URL)
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_prisma?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/ci_prisma?schema=public
 
     steps:
       - name: Checkout
