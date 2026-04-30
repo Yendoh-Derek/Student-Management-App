@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Patch,
   Param,
   ParseIntPipe,
   Post,
@@ -14,6 +16,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import type { JwtUser } from "../../common/types/jwt-user";
 import { CreateCourseDto } from "./dto/create-course.dto";
+import { UpdateCourseDto } from "./dto/update-course.dto";
 import { CoursesService } from "./courses.service";
 
 /**
@@ -39,5 +42,21 @@ export class CoursesController {
   @Roles("ADMIN", "TEACHER")
   create(@Body() dto: CreateCourseDto, @Req() req: Request & { user: JwtUser }) {
     return this.coursesService.create(dto, req.user);
+  }
+
+  @Patch(":id")
+  @Roles("ADMIN", "TEACHER")
+  update(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateCourseDto,
+    @Req() req: Request & { user: JwtUser }
+  ) {
+    return this.coursesService.update(id, dto, req.user);
+  }
+
+  @Delete(":id")
+  @Roles("ADMIN", "TEACHER")
+  remove(@Param("id", ParseIntPipe) id: number, @Req() req: Request & { user: JwtUser }) {
+    return this.coursesService.remove(id, req.user);
   }
 }

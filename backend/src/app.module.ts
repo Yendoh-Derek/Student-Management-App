@@ -10,6 +10,9 @@ import { UsersModule } from "./modules/users/users.module";
 import { CoursesModule } from "./modules/courses/courses.module";
 import { EnrollmentsModule } from "./modules/enrollments/enrollments.module";
 import { GradesModule } from "./modules/grades/grades.module";
+import { TermsModule } from "./modules/terms/terms.module";
+import { SectionsModule } from "./modules/sections/sections.module";
+import { AssessmentsModule } from "./modules/assessments/assessments.module";
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { GradesModule } from "./modules/grades/grades.module";
     CoursesModule,
     EnrollmentsModule,
     GradesModule,
+    TermsModule,
+    SectionsModule,
+    AssessmentsModule,
     AnalyticsModule
   ],
   controllers: [AppController]

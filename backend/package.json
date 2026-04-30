@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "lint": "tsc --noEmit",
-    "test": "node --test ./test/health.test.js ./test/grades-rollup.test.js",
+    "test": "node --test ./test/health.test.js ./test/grades-rollup.test.js ./test/security-authz.test.js ./test/course-crud-policies.test.js",
+    "test:integration": "npm run build && node --test ./test/academic-structures.integration.test.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed": "ts-node prisma/seed.ts"

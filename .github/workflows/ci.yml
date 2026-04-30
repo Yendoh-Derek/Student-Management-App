@@ -32,9 +32,26 @@ jobs:
         run: npm run prisma:generate
         working-directory: backend
 
+      - name: Validate Prisma schema
+        run: npx prisma validate
+        working-directory: backend
+
+      - name: Validate migrations compile
+        run: npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/schema.sql
+        working-directory: backend
+
       - name: Lint backend
         run: npm run lint
         working-directory: backend
+
+      - name: Lint frontend
+        run: npm run lint -w frontend
+
+      - name: Typecheck frontend
+        run: npm run typecheck -w frontend
+
+      - name: Frontend smoke test
+        run: npm run test:smoke -w frontend
 
       - name: Build frontend
         run: npm run build -w frontend -- --webpack
