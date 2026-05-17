@@ -5,8 +5,9 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   Req,
-  UseGuards
+  UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -14,6 +15,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import type { JwtUser } from "../../common/types/jwt-user";
 import { CreateStudentDto } from "./dto/create-student.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination.dto";
 import { StudentsService } from "./students.service";
 
 @Controller("students")
@@ -23,13 +25,23 @@ export class StudentsController {
 
   @Get()
   @Roles("ADMIN", "TEACHER")
-  findAll(@Req() req: Request & { user: JwtUser }) {
-    return this.studentsService.findAll(req.user);
+  findAll(
+    @Query() query: PaginationQueryDto,
+    @Req() req: Request & { user: JwtUser },
+  ) {
+    return this.studentsService.findAll(
+      req.user,
+      query.page ?? 1,
+      query.limit ?? 20,
+    );
   }
 
   @Get(":id")
   @Roles("ADMIN", "TEACHER", "STUDENT")
-  findOne(@Param("id", ParseIntPipe) id: number, @Req() req: Request & { user: JwtUser }) {
+  findOne(
+    @Param("id", ParseIntPipe) id: number,
+    @Req() req: Request & { user: JwtUser },
+  ) {
     return this.studentsService.findOne(id, req.user);
   }
 

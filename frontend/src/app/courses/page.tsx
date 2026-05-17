@@ -4,7 +4,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./courses-skin.css";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 type SessionResponse = {
   user: { id: number; email: string; role: string };
@@ -25,27 +26,43 @@ type EnrollmentRow = {
   student: { id: number; user: { name: string; email: string } };
 };
 
+type PaginatedResponse<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  lastPage: number;
+};
+
 export default function CoursesPage() {
   const [email, setEmail] = useState("teacher@sms.local");
   const [password, setPassword] = useState("Password123!");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState<string>("");
   const [courses, setCourses] = useState<CourseRow[]>([]);
+  const [coursePage, setCoursePage] = useState(1);
+  const [courseTotal, setCourseTotal] = useState(0);
+  const [courseLastPage, setCourseLastPage] = useState(1);
   const [enrollments, setEnrollments] = useState<EnrollmentRow[]>([]);
+  const [enrollmentPage, setEnrollmentPage] = useState(1);
+  const [enrollmentTotal, setEnrollmentTotal] = useState(0);
+  const [enrollmentLastPage, setEnrollmentLastPage] = useState(1);
   const [status, setStatus] = useState("");
+  const COURSES_LIMIT = 20;
+  const ENROLLMENTS_LIMIT = 20;
   const [loading, setLoading] = useState({
     login: false,
     courses: false,
     enrollments: false,
     createCourse: false,
     enroll: false,
-    grade: false
+    grade: false,
   });
   const [formError, setFormError] = useState({
     login: "",
     course: "",
     enroll: "",
-    grade: ""
+    grade: "",
   });
 
   const [newCourseName, setNewCourseName] = useState("");
@@ -59,14 +76,14 @@ export default function CoursesPage() {
   const apiFetch = useCallback(async (path: string, init: RequestInit = {}) => {
     const response = await fetch(`${API_BASE}${path}`, {
       ...init,
-      credentials: "include"
+      credentials: "include",
     });
     if (response.status !== 401 || path === "/auth/refresh") {
       return response;
     }
     const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
       method: "POST",
-      credentials: "include"
+      credentials: "include",
     });
     if (!refreshResponse.ok) {
       setIsAuthenticated(false);
@@ -75,7 +92,7 @@ export default function CoursesPage() {
     }
     return fetch(`${API_BASE}${path}`, {
       ...init,
-      credentials: "include"
+      credentials: "include",
     });
   }, []);
 
@@ -88,10 +105,13 @@ export default function CoursesPage() {
       const res = await apiFetch("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
-        setFormError((prev) => ({ ...prev, login: "Login failed. Check credentials and retry." }));
+        setFormError((prev) => ({
+          ...prev,
+          login: "Login failed. Check credentials and retry.",
+        }));
         setStatus("Login failed.");
         return;
       }
@@ -102,48 +122,67 @@ export default function CoursesPage() {
       void loadEnrollments();
       setStatus(`Signed in as ${data.user.role}`);
     } catch {
-      setFormError((prev) => ({ ...prev, login: `Cannot reach API at ${API_BASE}.` }));
+      setFormError((prev) => ({
+        ...prev,
+        login: `Cannot reach API at ${API_BASE}.`,
+      }));
       setStatus(`Cannot reach API at ${API_BASE}.`);
     } finally {
       setLoading((prev) => ({ ...prev, login: false }));
     }
   }
 
-  const loadCourses = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, courses: true }));
-    try {
-      const res = await apiFetch("/courses");
-      if (!res.ok) {
-        setStatus("Could not load courses.");
-        return;
+  const loadCourses = useCallback(
+    async (page: number = 1) => {
+      setLoading((prev) => ({ ...prev, courses: true }));
+      try {
+        const res = await apiFetch(
+          `/courses?page=${page}&limit=${COURSES_LIMIT}`,
+        );
+        if (!res.ok) {
+          setStatus("Could not load courses.");
+          return;
+        }
+        const data: PaginatedResponse<CourseRow> = await res.json();
+        setCourses(data.data);
+        setCoursePage(data.page);
+        setCourseTotal(data.total);
+        setCourseLastPage(data.lastPage);
+        setStatus(`Loaded ${data.data.length} of ${data.total} course(s)`);
+      } catch {
+        setStatus(`Cannot reach API at ${API_BASE}.`);
+      } finally {
+        setLoading((prev) => ({ ...prev, courses: false }));
       }
-      const data: CourseRow[] = await res.json();
-      setCourses(data);
-      setStatus(`Loaded ${data.length} course(s)`);
-    } catch {
-      setStatus(`Cannot reach API at ${API_BASE}.`);
-    } finally {
-      setLoading((prev) => ({ ...prev, courses: false }));
-    }
-  }, [apiFetch]);
+    },
+    [apiFetch],
+  );
 
-  const loadEnrollments = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, enrollments: true }));
-    try {
-      const res = await apiFetch("/enrollments");
-      if (!res.ok) {
-        setStatus("Could not load enrollments.");
-        return;
+  const loadEnrollments = useCallback(
+    async (page: number = 1) => {
+      setLoading((prev) => ({ ...prev, enrollments: true }));
+      try {
+        const res = await apiFetch(
+          `/enrollments?page=${page}&limit=${ENROLLMENTS_LIMIT}`,
+        );
+        if (!res.ok) {
+          setStatus("Could not load enrollments.");
+          return;
+        }
+        const data: PaginatedResponse<EnrollmentRow> = await res.json();
+        setEnrollments(data.data);
+        setEnrollmentPage(data.page);
+        setEnrollmentTotal(data.total);
+        setEnrollmentLastPage(data.lastPage);
+        setStatus(`Loaded ${data.data.length} of ${data.total} enrollment(s)`);
+      } catch {
+        setStatus(`Cannot reach API at ${API_BASE}.`);
+      } finally {
+        setLoading((prev) => ({ ...prev, enrollments: false }));
       }
-      const data: EnrollmentRow[] = await res.json();
-      setEnrollments(data);
-      setStatus(`Loaded ${data.length} enrollment(s)`);
-    } catch {
-      setStatus(`Cannot reach API at ${API_BASE}.`);
-    } finally {
-      setLoading((prev) => ({ ...prev, enrollments: false }));
-    }
-  }, [apiFetch]);
+    },
+    [apiFetch],
+  );
 
   useEffect(() => {
     void (async () => {
@@ -169,11 +208,16 @@ export default function CoursesPage() {
       const res = await apiFetch("/courses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setFormError((prev) => ({ ...prev, course: "Create course failed for current role/inputs." }));
-        setStatus("Create course failed (ADMIN needs teacherId; TEACHER uses own id).");
+        setFormError((prev) => ({
+          ...prev,
+          course: "Create course failed for current role/inputs.",
+        }));
+        setStatus(
+          "Create course failed (ADMIN needs teacherId; TEACHER uses own id).",
+        );
         return;
       }
       setNewCourseName("");
@@ -181,7 +225,10 @@ export default function CoursesPage() {
       await loadCourses();
       setStatus("Course created.");
     } catch {
-      setFormError((prev) => ({ ...prev, course: `Cannot reach API at ${API_BASE}.` }));
+      setFormError((prev) => ({
+        ...prev,
+        course: `Cannot reach API at ${API_BASE}.`,
+      }));
       setStatus(`Cannot reach API at ${API_BASE}.`);
     } finally {
       setLoading((prev) => ({ ...prev, createCourse: false }));
@@ -198,11 +245,14 @@ export default function CoursesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: Number(enrollStudentId),
-          courseId: Number(enrollCourseId)
-        })
+          courseId: Number(enrollCourseId),
+        }),
       });
       if (!res.ok) {
-        setFormError((prev) => ({ ...prev, enroll: "Enrollment failed (duplicate, invalid, or forbidden)." }));
+        setFormError((prev) => ({
+          ...prev,
+          enroll: "Enrollment failed (duplicate, invalid, or forbidden).",
+        }));
         setStatus("Enrollment failed (duplicate or forbidden).");
         return;
       }
@@ -212,7 +262,10 @@ export default function CoursesPage() {
       setEnrollCourseId("");
       setStatus("Student enrolled.");
     } catch {
-      setFormError((prev) => ({ ...prev, enroll: `Cannot reach API at ${API_BASE}.` }));
+      setFormError((prev) => ({
+        ...prev,
+        enroll: `Cannot reach API at ${API_BASE}.`,
+      }));
       setStatus(`Cannot reach API at ${API_BASE}.`);
     } finally {
       setLoading((prev) => ({ ...prev, enroll: false }));
@@ -230,11 +283,14 @@ export default function CoursesPage() {
         body: JSON.stringify({
           enrollmentId: Number(gradeEnrollmentId),
           score: Number(gradeScore),
-          term: gradeTerm
-        })
+          term: gradeTerm,
+        }),
       });
       if (!res.ok) {
-        setFormError((prev) => ({ ...prev, grade: "Grade submission failed. Verify enrollment and score." }));
+        setFormError((prev) => ({
+          ...prev,
+          grade: "Grade submission failed. Verify enrollment and score.",
+        }));
         setStatus("Grade failed (check enrollment id and role).");
         return;
       }
@@ -244,7 +300,10 @@ export default function CoursesPage() {
       setGradeTerm("Term 1");
       setStatus("Grade recorded; student average updated.");
     } catch {
-      setFormError((prev) => ({ ...prev, grade: `Cannot reach API at ${API_BASE}.` }));
+      setFormError((prev) => ({
+        ...prev,
+        grade: `Cannot reach API at ${API_BASE}.`,
+      }));
       setStatus(`Cannot reach API at ${API_BASE}.`);
     } finally {
       setLoading((prev) => ({ ...prev, grade: false }));
@@ -264,9 +323,10 @@ export default function CoursesPage() {
           Academic registry
         </h1>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">
-          Courses, enrollments, and grade entry against the NestJS API. Sign in as{" "}
-          <strong className="text-[var(--accent)]">teacher@sms.local</strong> or{" "}
-          <strong className="text-[var(--accent)]">admin@sms.local</strong> (seed passwords).
+          Courses, enrollments, and grade entry against the NestJS API. Sign in
+          as <strong className="text-[var(--accent)]">teacher@sms.local</strong>{" "}
+          or <strong className="text-[var(--accent)]">admin@sms.local</strong>{" "}
+          (seed passwords).
         </p>
         <Link
           href="/"
@@ -296,7 +356,11 @@ export default function CoursesPage() {
 
       <section className="elevated mb-8 rounded-2xl p-6 stagger-item">
         <h2 className="mb-4 text-xl text-[#f4f1ea]">Session</h2>
-        <form className="flex flex-wrap gap-3" onSubmit={login} aria-busy={loading.login}>
+        <form
+          className="flex flex-wrap gap-3"
+          onSubmit={login}
+          aria-busy={loading.login}
+        >
           <label className="sr-only" htmlFor="login-email">
             Email
           </label>
@@ -331,21 +395,51 @@ export default function CoursesPage() {
           <button
             type="button"
             className="min-h-11 rounded-lg border border-[var(--stroke)] px-4 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[#e8ecf2] disabled:opacity-40"
-            disabled={!isAuthenticated || loading.courses || loading.enrollments}
+            disabled={
+              !isAuthenticated || loading.courses || loading.enrollments
+            }
             onClick={() => {
               void loadCourses();
               void loadEnrollments();
             }}
           >
-            {loading.courses || loading.enrollments ? "Refreshing..." : "Refresh data"}
+            {loading.courses || loading.enrollments
+              ? "Refreshing..."
+              : "Refresh data"}
           </button>
         </form>
-        {formError.login && <p className="mt-3 text-sm text-amber-300">{formError.login}</p>}
+        {formError.login && (
+          <p className="mt-3 text-sm text-amber-300">{formError.login}</p>
+        )}
       </section>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <section className="elevated rounded-2xl p-6 stagger-item">
           <h2 className="mb-4 text-xl text-[#f4f1ea]">Courses</h2>
+          <div className="mb-4 flex items-center justify-between gap-2 text-sm text-[var(--muted)]">
+            <span>
+              Page {coursePage} of {Math.max(1, courseLastPage)} ({courseTotal}{" "}
+              total)
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadCourses(Math.max(1, coursePage - 1))}
+                disabled={coursePage <= 1 || loading.courses}
+                className="rounded-md border border-[var(--stroke)] px-3 py-1 text-xs hover:bg-[var(--surface)] disabled:opacity-40"
+              >
+                ← Prev
+              </button>
+              <button
+                onClick={() =>
+                  loadCourses(Math.min(courseLastPage, coursePage + 1))
+                }
+                disabled={coursePage >= courseLastPage || loading.courses}
+                className="rounded-md border border-[var(--stroke)] px-3 py-1 text-xs hover:bg-[var(--surface)] disabled:opacity-40"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
           <ul className="space-y-3">
             {courses.map((c) => (
               <li
@@ -363,16 +457,31 @@ export default function CoursesPage() {
                 </span>
               </li>
             ))}
-            {loading.courses && <li className="text-sm text-[var(--muted)]">Loading courses...</li>}
-            {courses.length === 0 && isAuthenticated && !loading.courses && (
-              <li className="text-sm text-[var(--muted)]">No courses (or empty list for this role).</li>
+            {loading.courses && (
+              <li className="text-sm text-[var(--muted)]">
+                Loading courses...
+              </li>
             )}
-            {!isAuthenticated && <li className="text-sm text-[var(--muted)]">Sign in to view courses.</li>}
+            {courses.length === 0 && isAuthenticated && !loading.courses && (
+              <li className="text-sm text-[var(--muted)]">
+                No courses (or empty list for this role).
+              </li>
+            )}
+            {!isAuthenticated && (
+              <li className="text-sm text-[var(--muted)]">
+                Sign in to view courses.
+              </li>
+            )}
           </ul>
 
           {canManageCourses && (
-            <form className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6" onSubmit={createCourse}>
-              <p className="text-sm font-medium text-[var(--accent)]">New course</p>
+            <form
+              className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6"
+              onSubmit={createCourse}
+            >
+              <p className="text-sm font-medium text-[var(--accent)]">
+                New course
+              </p>
               <label className="sr-only" htmlFor="course-name">
                 Course name
               </label>
@@ -386,16 +495,16 @@ export default function CoursesPage() {
               />
               {role === "ADMIN" && (
                 <>
-                <label className="sr-only" htmlFor="course-teacher-id">
-                  Teacher user id
-                </label>
-                <input
-                  id="course-teacher-id"
-                  className="rounded-lg border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-sm"
-                  placeholder="Teacher user id (required for admin)"
-                  value={teacherIdForCourse}
-                  onChange={(e) => setTeacherIdForCourse(e.target.value)}
-                />
+                  <label className="sr-only" htmlFor="course-teacher-id">
+                    Teacher user id
+                  </label>
+                  <input
+                    id="course-teacher-id"
+                    className="rounded-lg border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-sm"
+                    placeholder="Teacher user id (required for admin)"
+                    value={teacherIdForCourse}
+                    onChange={(e) => setTeacherIdForCourse(e.target.value)}
+                  />
                 </>
               )}
               <button
@@ -405,33 +514,76 @@ export default function CoursesPage() {
               >
                 {loading.createCourse ? "Creating..." : "Create course"}
               </button>
-              {formError.course && <p className="text-sm text-amber-300">{formError.course}</p>}
+              {formError.course && (
+                <p className="text-sm text-amber-300">{formError.course}</p>
+              )}
             </form>
           )}
         </section>
 
         <section className="elevated rounded-2xl p-6 stagger-item">
           <h2 className="mb-4 text-xl text-[#f4f1ea]">Enrollments</h2>
+          <div className="mb-4 flex items-center justify-between gap-2 text-sm text-[var(--muted)]">
+            <span>
+              Page {enrollmentPage} of {Math.max(1, enrollmentLastPage)} (
+              {enrollmentTotal} total)
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadEnrollments(Math.max(1, enrollmentPage - 1))}
+                disabled={enrollmentPage <= 1 || loading.enrollments}
+                className="rounded-md border border-[var(--stroke)] px-3 py-1 text-xs hover:bg-[var(--surface)] disabled:opacity-40"
+              >
+                ← Prev
+              </button>
+              <button
+                onClick={() =>
+                  loadEnrollments(
+                    Math.min(enrollmentLastPage, enrollmentPage + 1),
+                  )
+                }
+                disabled={
+                  enrollmentPage >= enrollmentLastPage || loading.enrollments
+                }
+                className="rounded-md border border-[var(--stroke)] px-3 py-1 text-xs hover:bg-[var(--surface)] disabled:opacity-40"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
           <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
             {enrollments.map((en) => (
               <li
                 key={en.id}
                 className="rounded-lg bg-[var(--surface)] px-3 py-2 text-[var(--muted)]"
               >
-                <span className="font-mono text-[var(--accent)]">#{en.id}</span> · {en.course.name} ·{" "}
-                {en.student.user.name}
+                <span className="font-mono text-[var(--accent)]">#{en.id}</span>{" "}
+                · {en.course.name} · {en.student.user.name}
               </li>
             ))}
-            {loading.enrollments && <li className="text-[var(--muted)]">Loading enrollments...</li>}
-            {enrollments.length === 0 && isAuthenticated && !loading.enrollments && (
-              <li className="text-[var(--muted)]">No enrollments visible.</li>
+            {loading.enrollments && (
+              <li className="text-[var(--muted)]">Loading enrollments...</li>
             )}
-            {!isAuthenticated && <li className="text-[var(--muted)]">Sign in to view enrollments.</li>}
+            {enrollments.length === 0 &&
+              isAuthenticated &&
+              !loading.enrollments && (
+                <li className="text-[var(--muted)]">No enrollments visible.</li>
+              )}
+            {!isAuthenticated && (
+              <li className="text-[var(--muted)]">
+                Sign in to view enrollments.
+              </li>
+            )}
           </ul>
 
           {canEnrollOrGrade && (
-            <form className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6" onSubmit={enroll}>
-              <p className="text-sm font-medium text-[var(--accent)]">Enroll student</p>
+            <form
+              className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6"
+              onSubmit={enroll}
+            >
+              <p className="text-sm font-medium text-[var(--accent)]">
+                Enroll student
+              </p>
               <div className="flex flex-wrap gap-2">
                 <label className="sr-only" htmlFor="enroll-student-id">
                   Student id
@@ -464,18 +616,27 @@ export default function CoursesPage() {
               </div>
               <button
                 type="submit"
-                disabled={!isAuthenticated || courses.length === 0 || loading.enroll}
+                disabled={
+                  !isAuthenticated || courses.length === 0 || loading.enroll
+                }
                 className="min-h-11 w-fit rounded-lg border border-[var(--accent)] px-4 py-2 text-sm text-[var(--accent)] hover:bg-[var(--accent)] hover:text-[#1a1206] disabled:opacity-40"
               >
                 {loading.enroll ? "Enrolling..." : "Enroll"}
               </button>
-              {formError.enroll && <p className="text-sm text-amber-300">{formError.enroll}</p>}
+              {formError.enroll && (
+                <p className="text-sm text-amber-300">{formError.enroll}</p>
+              )}
             </form>
           )}
 
           {canEnrollOrGrade && (
-            <form className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6" onSubmit={addGrade}>
-              <p className="text-sm font-medium text-[var(--accent)]">Record grade</p>
+            <form
+              className="mt-6 grid gap-3 border-t border-[var(--stroke)] pt-6"
+              onSubmit={addGrade}
+            >
+              <p className="text-sm font-medium text-[var(--accent)]">
+                Record grade
+              </p>
               <label className="sr-only" htmlFor="grade-enrollment-id">
                 Enrollment
               </label>
@@ -521,12 +682,16 @@ export default function CoursesPage() {
               </div>
               <button
                 type="submit"
-                disabled={!isAuthenticated || enrollments.length === 0 || loading.grade}
+                disabled={
+                  !isAuthenticated || enrollments.length === 0 || loading.grade
+                }
                 className="min-h-11 w-fit rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#1a1206] disabled:opacity-40"
               >
                 {loading.grade ? "Saving..." : "Save grade"}
               </button>
-              {formError.grade && <p className="text-sm text-amber-300">{formError.grade}</p>}
+              {formError.grade && (
+                <p className="text-sm text-amber-300">{formError.grade}</p>
+              )}
             </form>
           )}
         </section>
