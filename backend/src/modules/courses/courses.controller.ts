@@ -1,12 +1,15 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Patch,
   Param,
   ParseIntPipe,
   Post,
+  Query,
   Req,
-  UseGuards
+  UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
@@ -14,6 +17,8 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import type { JwtUser } from "../../common/types/jwt-user";
 import { CreateCourseDto } from "./dto/create-course.dto";
+import { UpdateCourseDto } from "./dto/update-course.dto";
+import { PaginationQueryDto } from "../../common/dto/pagination.dto";
 import { CoursesService } from "./courses.service";
 
 /**
@@ -26,18 +31,50 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Get()
-  findAll(@Req() req: Request & { user: JwtUser }) {
-    return this.coursesService.findAll(req.user);
+  findAll(
+    @Query() query: PaginationQueryDto,
+    @Req() req: Request & { user: JwtUser },
+  ) {
+    return this.coursesService.findAll(
+      req.user,
+      query.page ?? 1,
+      query.limit ?? 20,
+    );
   }
 
   @Get(":id")
-  findOne(@Param("id", ParseIntPipe) id: number, @Req() req: Request & { user: JwtUser }) {
+  findOne(
+    @Param("id", ParseIntPipe) id: number,
+    @Req() req: Request & { user: JwtUser },
+  ) {
     return this.coursesService.findOne(id, req.user);
   }
 
   @Post()
   @Roles("ADMIN", "TEACHER")
-  create(@Body() dto: CreateCourseDto, @Req() req: Request & { user: JwtUser }) {
+  create(
+    @Body() dto: CreateCourseDto,
+    @Req() req: Request & { user: JwtUser },
+  ) {
     return this.coursesService.create(dto, req.user);
+  }
+
+  @Patch(":id")
+  @Roles("ADMIN", "TEACHER")
+  update(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateCourseDto,
+    @Req() req: Request & { user: JwtUser },
+  ) {
+    return this.coursesService.update(id, dto, req.user);
+  }
+
+  @Delete(":id")
+  @Roles("ADMIN", "TEACHER")
+  remove(
+    @Param("id", ParseIntPipe) id: number,
+    @Req() req: Request & { user: JwtUser },
+  ) {
+    return this.coursesService.remove(id, req.user);
   }
 }

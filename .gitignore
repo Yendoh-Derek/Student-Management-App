@@ -1,9 +1,64 @@
+# Dependencies
 node_modules/
-**/node_modules/
-**/.next/
-**/dist/
-**/.env
-*.log
-.DS_Store
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
 coverage/
-backend/generated/
+.nyc_output/
+archive/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+.test-results/
+junit.xml
+test-coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Cache
+.cache/
+.eslintcache
+.parcel-cache
+.turbo/
+
+# Database (local development only)
+prisma/dev.db
+prisma/dev.db-journal
+
+# Docker artifacts
+.docker/
+
+# Misc
+.DS_Store
+*.pem
+*.pfx
+.turbopack/

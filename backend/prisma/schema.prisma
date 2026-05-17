@@ -20,6 +20,8 @@ model User {
   email            String   @unique
   password         String
   role             Role     @default(STUDENT)
+  refreshTokenHash String?
+  refreshTokenExp  DateTime?
   student          Student?
   coursesTeaching  Course[] @relation("TeacherCourses")
   createdAt        DateTime @default(now())
@@ -43,28 +45,97 @@ model Course {
   id          Int           @id @default(autoincrement())
   name        String
   teacherId   Int
+  termId      Int?
+  sectionId   Int?
   teacher     User          @relation("TeacherCourses", fields: [teacherId], references: [id], onDelete: Restrict)
+  term        Term?         @relation(fields: [termId], references: [id], onDelete: SetNull)
+  section     Section?      @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   enrollments Enrollment[]
+  assessments Assessment[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  @@index([teacherId])
+  @@index([termId])
+  @@index([sectionId])
 }
 
 model Enrollment {
   id        Int      @id @default(autoincrement())
   studentId Int
   courseId  Int
+  termId    Int?
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   grades    Grade[]
+  term      Term?    @relation(fields: [termId], references: [id], onDelete: SetNull)
 
   @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([termId])
 }
 
 model Grade {
   id           Int          @id @default(autoincrement())
   enrollmentId Int
+  assessmentId Int?
   enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  assessment   Assessment?  @relation(fields: [assessmentId], references: [id], onDelete: SetNull)
   score        Float
   term         String
   createdAt    DateTime     @default(now())
+
+  @@index([enrollmentId])
+  @@index([assessmentId])
+}
+
+model Term {
+  id          Int           @id @default(autoincrement())
+  name        String
+  startsOn    DateTime
+  endsOn      DateTime
+  courses     Course[]
+  enrollments Enrollment[]
+  sections    Section[]
+  assessments Assessment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([name, startsOn])
+  @@index([startsOn, endsOn])
+}
+
+model Section {
+  id        Int      @id @default(autoincrement())
+  name      String
+  className String
+  termId    Int
+  term      Term     @relation(fields: [termId], references: [id], onDelete: Cascade)
+  courses   Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([termId, name])
+  @@index([termId])
+}
+
+model Assessment {
+  id          Int      @id @default(autoincrement())
+  courseId     Int
+  termId       Int
+  title        String
+  category     String
+  weight       Float
+  maxScore     Float    @default(100)
+  dueAt        DateTime?
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  term         Term     @relation(fields: [termId], references: [id], onDelete: Cascade)
+  grades       Grade[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([termId])
+  @@unique([courseId, termId, title])
 }

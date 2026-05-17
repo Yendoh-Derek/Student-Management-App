@@ -2,15 +2,31 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException
+  NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import type { JwtUser } from "../../common/types/jwt-user";
 import { CreateEnrollmentDto } from "./dto/create-enrollment.dto";
+import { UpdateEnrollmentDto } from "./dto/update-enrollment.dto";
+import { PaginatedResponse } from "../../common/dto/pagination.dto";
 
 @Injectable()
 export class EnrollmentsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly enrollmentInclude = {
+    course: {
+      include: {
+        teacher: { select: { id: true, name: true, email: true } },
+      },
+    },
+    student: {
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+      },
+    },
+    grades: true,
+  } as const;
 
   async create(dto: CreateEnrollmentDto, user: JwtUser) {
     if (user.role === "STUDENT") {
@@ -18,16 +34,18 @@ export class EnrollmentsService {
     }
 
     const course = await this.prisma.course.findUnique({
-      where: { id: dto.courseId }
+      where: { id: dto.courseId },
     });
     if (!course) throw new NotFoundException("Course not found");
 
     if (user.role === "TEACHER" && course.teacherId !== user.userId) {
-      throw new ForbiddenException("You can only enroll students in your own courses");
+      throw new ForbiddenException(
+        "You can only enroll students in your own courses",
+      );
     }
 
     const student = await this.prisma.student.findUnique({
-      where: { id: dto.studentId }
+      where: { id: dto.studentId },
     });
     if (!student) throw new NotFoundException("Student not found");
 
@@ -35,9 +53,9 @@ export class EnrollmentsService {
       where: {
         studentId_courseId: {
           studentId: dto.studentId,
-          courseId: dto.courseId
-        }
-      }
+          courseId: dto.courseId,
+        },
+      },
     });
     if (existing) {
       throw new ConflictException("Student is already enrolled in this course");
@@ -46,18 +64,9 @@ export class EnrollmentsService {
     return this.prisma.enrollment.create({
       data: {
         studentId: dto.studentId,
-        courseId: dto.courseId
+        courseId: dto.courseId,
       },
-      include: {
-        course: {
-          select: { id: true, name: true, teacherId: true }
-        },
-        student: {
-          include: {
-            user: { select: { id: true, name: true, email: true } }
-          }
-        }
-      }
+      include: this.enrollmentInclude,
     });
   }
 
@@ -66,30 +75,34 @@ export class EnrollmentsService {
    */
   async findAll(
     user: JwtUser,
-    query: { courseId?: number; studentId?: number }
-  ) {
+    query: { courseId?: number; studentId?: number },
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedResponse<any>> {
+    const skip = (page - 1) * limit;
+
     if (user.role === "STUDENT") {
       const student = await this.prisma.student.findUnique({
-        where: { userId: user.userId }
+        where: { userId: user.userId },
       });
-      if (!student) return [];
-      return this.prisma.enrollment.findMany({
-        where: { studentId: student.id },
-        include: {
-          course: {
-            include: {
-              teacher: { select: { id: true, name: true, email: true } }
-            }
-          },
-          student: {
-            include: {
-              user: { select: { id: true, name: true, email: true } }
-            }
-          },
-          grades: true
-        },
-        orderBy: { id: "asc" }
-      });
+      if (!student) return { data: [], total: 0, page, limit, lastPage: 0 };
+      const [data, total] = await Promise.all([
+        this.prisma.enrollment.findMany({
+          where: { studentId: student.id },
+          include: this.enrollmentInclude,
+          orderBy: { id: "asc" },
+          skip,
+          take: limit,
+        }),
+        this.prisma.enrollment.count({ where: { studentId: student.id } }),
+      ]);
+      return {
+        data,
+        total,
+        page,
+        limit,
+        lastPage: Math.ceil(total / limit),
+      };
     }
 
     const where: {
@@ -105,22 +118,103 @@ export class EnrollmentsService {
       where.course = { teacherId: user.userId };
     }
 
-    return this.prisma.enrollment.findMany({
-      where,
-      include: {
-        course: {
-          include: {
-            teacher: { select: { id: true, name: true, email: true } }
-          }
-        },
-        student: {
-          include: {
-            user: { select: { id: true, name: true, email: true } }
-          }
-        },
-        grades: true
+    const [data, total] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where,
+        include: this.enrollmentInclude,
+        orderBy: { id: "asc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.enrollment.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
+  async update(id: number, dto: UpdateEnrollmentDto, user: JwtUser) {
+    if (user.role === "STUDENT") {
+      throw new ForbiddenException("Students cannot update enrollments");
+    }
+
+    const existing = await this.prisma.enrollment.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+    if (!existing) throw new NotFoundException("Enrollment not found");
+
+    if (user.role === "TEACHER" && existing.course.teacherId !== user.userId) {
+      throw new ForbiddenException(
+        "You can only update enrollments for your own courses",
+      );
+    }
+
+    const nextStudentId = dto.studentId ?? existing.studentId;
+    const nextCourseId = dto.courseId ?? existing.courseId;
+
+    const nextCourse = await this.prisma.course.findUnique({
+      where: { id: nextCourseId },
+    });
+    if (!nextCourse) throw new NotFoundException("Course not found");
+
+    if (user.role === "TEACHER" && nextCourse.teacherId !== user.userId) {
+      throw new ForbiddenException(
+        "You can only assign enrollments to your own courses",
+      );
+    }
+
+    const nextStudent = await this.prisma.student.findUnique({
+      where: { id: nextStudentId },
+    });
+    if (!nextStudent) throw new NotFoundException("Student not found");
+
+    const duplicate = await this.prisma.enrollment.findFirst({
+      where: {
+        id: { not: id },
+        studentId: nextStudentId,
+        courseId: nextCourseId,
       },
-      orderBy: { id: "asc" }
+    });
+    if (duplicate) {
+      throw new ConflictException("Student is already enrolled in this course");
+    }
+
+    return this.prisma.enrollment.update({
+      where: { id },
+      data: {
+        studentId: nextStudentId,
+        courseId: nextCourseId,
+      },
+      include: this.enrollmentInclude,
+    });
+  }
+
+  async remove(id: number, user: JwtUser) {
+    if (user.role === "STUDENT") {
+      throw new ForbiddenException("Students cannot delete enrollments");
+    }
+
+    const existing = await this.prisma.enrollment.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+    if (!existing) throw new NotFoundException("Enrollment not found");
+
+    if (user.role === "TEACHER" && existing.course.teacherId !== user.userId) {
+      throw new ForbiddenException(
+        "You can only delete enrollments for your own courses",
+      );
+    }
+
+    return this.prisma.enrollment.delete({
+      where: { id },
+      include: this.enrollmentInclude,
     });
   }
 }
